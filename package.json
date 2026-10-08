@@ -1,0 +1,53 @@
+{
+  "name": "wavesurfer-annotations",
+  "version": "0.1.0",
+  "description": "A wavesurfer.js plugin that shows annotations of a recording: boxes bounded in time and frequency on the spectrogram, linked to regions on the waveform",
+  "type": "module",
+  "license": "MIT",
+  "author": "Ed Baker",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edwbaker/wavesurfer-annotations.git"
+  },
+  "homepage": "https://github.com/edwbaker/wavesurfer-annotations#readme",
+  "bugs": {
+    "url": "https://github.com/edwbaker/wavesurfer-annotations/issues"
+  },
+  "keywords": [
+    "wavesurfer",
+    "wavesurfer-plugin",
+    "wavesurfer.js",
+    "spectrogram",
+    "annotations",
+    "regions",
+    "region of interest",
+    "audiovisual core",
+    "bioacoustics"
+  ],
+  "main": "./dist/annotations.js",
+  "module": "./dist/annotations.js",
+  "exports": {
+    ".": "./dist/annotations.js",
+    "./umd": "./dist/annotations.min.js",
+    "./package.json": "./package.json"
+  },
+  "unpkg": "./dist/annotations.min.js",
+  "jsdelivr": "./dist/annotations.min.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "test": "node --test \"test/*.test.js\"",
+    "check": "es-check es2020 dist/annotations.min.js && es-check es2020 --module dist/annotations.js",
+    "serve": "node demo/serve.js"
+  },
+  "peerDependencies": {
+    "wavesurfer.js": "^7.10.1 || ^8.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
+    "es-check": "^9.8.1",
+    "rollup": "^4.64.2"
+  }
+}

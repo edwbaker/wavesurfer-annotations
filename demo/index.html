@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wavesurfer-annotations demo</title>
+<script type="importmap">{ "imports": { "wavesurfer.js": "./wavesurfer-shim.js" } }</script>
+<style>
+  :root { color-scheme: light; font: 14px/1.5 system-ui, sans-serif; color: #1d2026; background: #fafafa; }
+  body { margin: 0 auto; padding: 16px; max-width: 1100px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { margin: 0 0 12px; color: #4a4f59; }
+  form { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 8px; }
+  label { white-space: nowrap; }
+  #status { min-height: 21px; color: #4a4f59; margin: 4px 0 8px; }
+  #status.error { color: #b00020; }
+  .player { position: relative; padding-left: 52px; background: #fff; border: 1px solid #dde1e6; }
+  #axis { position: absolute; left: 0; top: 0; width: 52px; display: none; }
+  #credits { margin: 12px 0; font-size: 13px; color: #4a4f59; }
+  #credits div { margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 3px 8px; border-bottom: 1px solid #e6e8eb; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover, tbody tr.chosen { background: #fff2e0; }
+  td.number { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<h1>wavesurfer-annotations</h1>
+<p>Annotations of xeno-canto recordings, from the <a href="https://api.audioblast.org/">audioBLAST! API</a>.
+  Each one's span of time is a region on the waveform; one bounded in frequency as well is a box on the spectrogram.
+  A dashed edge is a bound beyond the frequencies shown, and an edge not drawn is one the annotation does not have.</p>
+
+<form id="controls">
+  <label>Recording <select name="xc"></select></label>
+  <label>or xeno-canto number <input name="other" inputmode="numeric" size="8" pattern="[0-9]*"></label>
+  <label>wavesurfer.js <select name="ws"><option>7.10.1</option><option>8.0.2</option></select></label>
+  <label>Plugin <select name="build"><option value="src">source</option><option value="dist">dist build</option></select></label>
+  <label>Spectrogram up to <select name="fmax">
+    <option value="">the recording's top</option><option value="48000">48 kHz</option><option value="24000">24 kHz</option>
+    <option value="12000">12 kHz</option><option value="6000">6 kHz</option></select></label>
+  <label><input type="checkbox" name="regions" value="on"> Regions on the waveform</label>
+  <button>Show</button>
+</form>
+<label>Zoom <input type="range" id="zoom" min="10" max="1000" value="100"></label>
+<div id="status"></div>
+<div class="player"><canvas id="axis"></canvas><div id="player"></div></div>
+<div id="credits"></div>
+<table>
+  <thead><tr><th>Annotation</th><th>Time (s)</th><th>Frequency</th><th>From</th></tr></thead>
+  <tbody id="list"></tbody>
+</table>
+<script type="module" src="demo.js"></script>
+</body>
+</html>
