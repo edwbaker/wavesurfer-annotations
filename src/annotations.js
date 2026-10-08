@@ -41,6 +41,10 @@ const DEFAULTS = {
 // beyond what is shown dashed, and no bound at all not drawn
 const EDGE_STYLES = { bound: 'solid', clipped: 'dashed', open: 'none' }
 
+// Pixels a box must be across to show its label, cut to fit; a narrower one
+// gives it only in its tooltip
+const LABEL_MIN_WIDTH = 40
+
 /**
  * The Spectrogram plugin's element in wavesurfer.js's wrapper, which the
  * plugin does not name. In wavesurfer.js 7 it is the plugin's `wrapper`; in 8
@@ -319,10 +323,11 @@ class AnnotationsPlugin extends BasePlugin {
       return
     }
     Object.assign(this.layer.style, { display: '', top: view.top + 'px', height: view.height + 'px' })
+    const width = ws.getWrapper().offsetWidth
     this.annotations.forEach((annotation) => {
       const place = boxLayout(annotation, { min: view.min, max: view.max, height: view.height }, duration, this.options.minSize)
       if (!place) return
-      this.placeBox(this.boxFor(annotation), annotation, place)
+      this.placeBox(this.boxFor(annotation), annotation, place, (place.width / 100) * width)
     })
   }
 
@@ -386,6 +391,11 @@ class AnnotationsPlugin extends BasePlugin {
       position: 'absolute',
       top: '0',
       left: '0',
+      // Cut to fit its box (or region), so that labels never run into each other
+      maxWidth: '100%',
+      boxSizing: 'border-box',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
       padding: '0 3px',
       fontSize: '10px',
       lineHeight: '14px',
@@ -434,7 +444,7 @@ class AnnotationsPlugin extends BasePlugin {
     return box
   }
 
-  placeBox(box, annotation, place) {
+  placeBox(box, annotation, place, pixels) {
     const offView = place.position !== 'inside'
     Object.assign(box.style, {
       left: place.left + '%',
@@ -448,7 +458,7 @@ class AnnotationsPlugin extends BasePlugin {
       borderBottomStyle: offView ? 'dashed' : EDGE_STYLES[place.edges.bottom],
     })
     const label = box.firstChild
-    if (label) label.style.display = offView ? 'none' : ''
+    if (label) label.style.display = offView || pixels < LABEL_MIN_WIDTH ? 'none' : ''
     box.title = describe(annotation) + (offView ? ' (' + place.position + ' the frequencies shown)' : '')
   }
 
