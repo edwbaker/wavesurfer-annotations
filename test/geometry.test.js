@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { boxLayout, frequencyToY, isBoxed, normaliseAnnotation, timeLayout, toNumber } from '../src/geometry.js'
+import { boxLayout, frequencyToY, isBoxed, labelRooms, normaliseAnnotation, timeLayout, toNumber } from '../src/geometry.js'
 
 test('numbers come from numbers or numeric text, and nothing else', () => {
   assert.equal(toNumber('2734.03'), 2734.03)
@@ -115,6 +115,14 @@ test('a point in frequency is drawn minSize high, centred, and kept on the spect
   assert.deepEqual([atTop.top, atTop.height], [0, 3])
   const bigger = boxLayout({ start: 1, end: 2, low: 5000, high: 5000 }, view, 10, 5)
   assert.deepEqual([bigger.top, bigger.height], [47.5, 5])
+})
+
+test('a label has room up to the next box, in whatever order the boxes come', () => {
+  assert.deepEqual(labelRooms([0, 15, 60], 100), [15, 45, 40])
+  assert.deepEqual(labelRooms([60, 0, 15], 100), [40, 15, 45])
+  // Boxes starting together: the first has no room, the second the rest
+  assert.deepEqual(labelRooms([10, 10, 50], 100), [0, 40, 50])
+  assert.deepEqual(labelRooms([], 100), [])
 })
 
 test('nothing is placed without a view or a duration', () => {

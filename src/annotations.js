@@ -17,7 +17,7 @@
 import WaveSurfer from 'wavesurfer.js'
 import { withAlpha } from './color.js'
 import { describe } from './format.js'
-import { boxLayout, isBoxed, normaliseAnnotation, toNumber } from './geometry.js'
+import { boxLayout, isBoxed, labelRooms, normaliseAnnotation, toNumber } from './geometry.js'
 
 const BasePlugin = WaveSurfer && WaveSurfer.BasePlugin
 if (!BasePlugin) throw new Error('wavesurfer-annotations needs wavesurfer.js 7.10.1 or later, loaded before it')
@@ -41,9 +41,9 @@ const DEFAULTS = {
 // beyond what is shown dashed, and no bound at all not drawn
 const EDGE_STYLES = { bound: 'solid', clipped: 'dashed', open: 'none' }
 
-// Pixels a box must be across to show its label, cut to fit; a narrower one
-// gives it only in its tooltip
-const LABEL_MIN_WIDTH = 40
+// Pixels a label must have to be shown, cut to fit; with less, it is given
+// only in its box's tooltip
+const LABEL_MIN_ROOM = 30
 
 /**
  * The Spectrogram plugin's element in wavesurfer.js's wrapper, which the
@@ -323,11 +323,30 @@ class AnnotationsPlugin extends BasePlugin {
       return
     }
     Object.assign(this.layer.style, { display: '', top: view.top + 'px', height: view.height + 'px' })
-    const width = ws.getWrapper().offsetWidth
+    const labels = []
     this.annotations.forEach((annotation) => {
       const place = boxLayout(annotation, { min: view.min, max: view.max, height: view.height }, duration, this.options.minSize)
       if (!place) return
-      this.placeBox(this.boxFor(annotation), annotation, place, (place.width / 100) * width)
+      const box = this.boxFor(annotation)
+      this.placeBox(box, annotation, place)
+      const label = box.firstChild
+      // A strip beyond the frequencies shown gives its label only in its tooltip
+      if (label && place.position !== 'inside') label.style.display = 'none'
+      else if (label) labels.push({ label: label, left: place.left })
+    })
+    this.placeLabels(labels, ws.getWrapper().offsetWidth)
+  }
+
+  /**
+   * Gives each label the room to the next box, so that a narrow box's label
+   * can run on past it without covering another's, and leaves off any with
+   * too little room to read.
+   */
+  placeLabels(labels, width) {
+    const rooms = labelRooms(labels.map((item) => (item.left / 100) * width), width)
+    labels.forEach((item, i) => {
+      item.label.style.maxWidth = rooms[i] + 'px'
+      item.label.style.display = rooms[i] < LABEL_MIN_ROOM ? 'none' : ''
     })
   }
 
@@ -391,7 +410,8 @@ class AnnotationsPlugin extends BasePlugin {
       position: 'absolute',
       top: '0',
       left: '0',
-      // Cut to fit its box (or region), so that labels never run into each other
+      // Cut to fit: a box's label is given the room to the next box when it is
+      // laid out, a region's keeps to the region
       maxWidth: '100%',
       boxSizing: 'border-box',
       overflow: 'hidden',
@@ -444,7 +464,7 @@ class AnnotationsPlugin extends BasePlugin {
     return box
   }
 
-  placeBox(box, annotation, place, pixels) {
+  placeBox(box, annotation, place) {
     const offView = place.position !== 'inside'
     Object.assign(box.style, {
       left: place.left + '%',
@@ -457,8 +477,6 @@ class AnnotationsPlugin extends BasePlugin {
       borderTopStyle: offView ? 'dashed' : EDGE_STYLES[place.edges.top],
       borderBottomStyle: offView ? 'dashed' : EDGE_STYLES[place.edges.bottom],
     })
-    const label = box.firstChild
-    if (label) label.style.display = offView || pixels < LABEL_MIN_WIDTH ? 'none' : ''
     box.title = describe(annotation) + (offView ? ' (' + place.position + ' the frequencies shown)' : '')
   }
 

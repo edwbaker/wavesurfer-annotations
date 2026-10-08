@@ -121,6 +121,27 @@ export function timeLayout(start, end, duration) {
 }
 
 /**
+ * How much room each label has, in pixels: from its box's left edge to the
+ * next box's left edge along the timeline, or to the end of the timeline for
+ * the last. A label may run on past a narrow box into that room, but never
+ * into the next box, so labels never cover one another.
+ *
+ * @param {number[]} lefts the left edges of the boxes with labels, in pixels,
+ *   in any order
+ * @param {number} end the right edge of the timeline, in pixels
+ * @returns {number[]} the room for each, in the order given
+ */
+export function labelRooms(lefts, end) {
+  const order = lefts.map((left, i) => i).sort((a, b) => lefts[a] - lefts[b] || a - b)
+  const rooms = new Array(lefts.length)
+  order.forEach((index, k) => {
+    const next = k + 1 < order.length ? lefts[order[k + 1]] : end
+    rooms[index] = Math.max(0, next - lefts[index])
+  })
+  return rooms
+}
+
+/**
  * Where an annotation's box goes on a spectrogram.
  *
  * Its edges are each `bound` (the annotation's own bound, in view), `open`
