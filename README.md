@@ -177,6 +177,20 @@ The boxes are inside wavesurfer.js's shadow DOM. Style them with
 `::part(annotations)` (the layer over the spectrogram), `::part(annotation)`
 (each box) and `::part(annotation-label)`.
 
+Labels' looks (font, colours, padding and `top`) come from a stylesheet the
+plugin adds to the shadow DOM, which a page's own rules override:
+
+```css
+#player ::part(annotation-label) {
+  top: 3px;
+  font: 9px/1.5 monospace;
+  background: rgba(250, 252, 250, 0.9);
+}
+```
+
+Each box's colours are its annotation's, set on the box itself; override
+those with `!important`.
+
 ## Limits
 
 - Display only: annotations cannot yet be drawn or edited with the mouse.

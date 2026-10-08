@@ -45,6 +45,12 @@ const EDGE_STYLES = { bound: 'solid', clipped: 'dashed', open: 'none' }
 // only in its box's tooltip
 const LABEL_MIN_ROOM = 30
 
+// How labels look unless the page says otherwise. Kept in a stylesheet inside
+// wavesurfer.js's shadow DOM rather than inline, so that a page's own
+// ::part(annotation-label) rules override it, as they could not inline styles
+const LABEL_LOOK = '[part~="annotation-label"]{top:0;padding:0 3px;font-size:10px;line-height:14px;'
+  + 'color:#111;background:rgba(255,255,255,.8)}'
+
 /**
  * The Spectrogram plugin's element in wavesurfer.js's wrapper, which the
  * plugin does not name. In wavesurfer.js 7 it is the plugin's `wrapper`; in 8
@@ -94,6 +100,7 @@ class AnnotationsPlugin extends BasePlugin {
     // Spectrogram plugins that have said they are ready, so should be drawn
     this.drawn = new WeakSet()
     this.layer = null
+    this.look = null
     this.layoutTimer = null
     this.resizeObserver = null
     this.lastView = null
@@ -120,6 +127,12 @@ class AnnotationsPlugin extends BasePlugin {
     })
     this.layer = layer
     ws.getWrapper().appendChild(layer)
+    const root = ws.getWrapper().getRootNode()
+    if (root && root !== document && typeof root.appendChild === 'function') {
+      this.look = document.createElement('style')
+      this.look.textContent = LABEL_LOOK
+      root.appendChild(this.look)
+    }
 
     const relayout = () => this.scheduleLayout()
     this.subscriptions.push(
@@ -304,14 +317,16 @@ class AnnotationsPlugin extends BasePlugin {
   layout() {
     const ws = this.wavesurfer
     if (this.gone || !ws || !this.layer) return
+    // What the spectrogram shows can be known before the audio is, from tiles,
+    // so it is said at once, and a page's axis need not wait for the audio
+    const view = this.currentView()
+    this.emitView(view)
     const duration = ws.getDuration()
     // Nothing can be placed in time until wavesurfer.js knows the duration
     if (!(duration > 0)) return
     this.annotations.forEach((annotation) => this.linkRegion(annotation))
     this.confineRegions()
 
-    const view = this.currentView()
-    this.emitView(view)
     if (!view || !(view.max > view.min) || !(view.height > 0)) {
       this.layer.style.display = 'none'
       return
@@ -406,9 +421,9 @@ class AnnotationsPlugin extends BasePlugin {
     const label = document.createElement('div')
     label.setAttribute('part', 'annotation-label')
     label.textContent = text
+    // Only what the plugin relies on is inline; how it looks is in LABEL_LOOK
     Object.assign(label.style, {
       position: 'absolute',
-      top: '0',
       left: '0',
       // Cut to fit: a box's label is given the room to the next box when it is
       // laid out, a region's keeps to the region
@@ -416,11 +431,6 @@ class AnnotationsPlugin extends BasePlugin {
       boxSizing: 'border-box',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
-      padding: '0 3px',
-      fontSize: '10px',
-      lineHeight: '14px',
-      color: '#111',
-      background: 'rgba(255, 255, 255, 0.8)',
       whiteSpace: 'nowrap',
       pointerEvents: 'none',
     })
@@ -499,6 +509,8 @@ class AnnotationsPlugin extends BasePlugin {
     this.boxes.clear()
     if (this.layer) this.layer.remove()
     this.layer = null
+    if (this.look) this.look.remove()
+    this.look = null
     super.destroy()
   }
 }

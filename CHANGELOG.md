@@ -14,7 +14,11 @@
   - Marks bounds beyond the frequencies shown, and shows a box wholly beyond
     them as a strip along that edge.
   - `getFrequencyView()` and the `view` event, so that a page can draw its
-    frequency axis from the same figures as the boxes.
+    frequency axis from the same figures as the boxes. The view is given as
+    soon as it is known: from tiles, before the audio has arrived.
+  - Labels run on past narrow boxes as far as the next box, so they never
+    cover one another. How they look comes from a stylesheet in wavesurfer.js's
+    shadow DOM, which a page overrides with `::part(annotation-label)`.
   - Builds as an ES module and a UMD script, both using the page's own
     wavesurfer.js.
 - The demo shows xeno-canto recordings and their annotations from the
