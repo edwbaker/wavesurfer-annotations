@@ -393,7 +393,7 @@ class AnnotationsPlugin extends BasePlugin {
         drag: false,
         resize: false,
         // A boxed annotation is labelled on its box
-        content: this.options.labels && !isBoxed(annotation) && annotation.label ? this.makeLabel(annotation.label) : undefined,
+        content: this.options.labels && !isBoxed(annotation) && annotation.label ? this.regionContent(annotation.label) : undefined,
       })
     } catch (error) {
       this.warnOnce('regions', 'Regions could not be added (' + error.message + '); register the Regions plugin with the player too')
@@ -415,6 +415,17 @@ class AnnotationsPlugin extends BasePlugin {
       const annotation = this.annotations.get(id)
       if (annotation && isBoxed(annotation) && region.element) region.element.style.height = height + 'px'
     })
+  }
+
+  /**
+   * A region's label, in a holder: the Regions plugin names whatever content
+   * it is given `region-content`, which would take the label's own part, and
+   * with it the label's looks, away
+   */
+  regionContent(text) {
+    const holder = document.createElement('div')
+    holder.appendChild(this.makeLabel(text))
+    return holder
   }
 
   makeLabel(text) {
