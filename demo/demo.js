@@ -25,6 +25,7 @@ const withRegions = params.has('xc') ? params.get('regions') === 'on' : true
 const form = document.getElementById('controls')
 const status = document.getElementById('status')
 const zoom = document.getElementById('zoom')
+const play = document.getElementById('play')
 
 PRESETS.forEach((preset) => form.xc.append(new Option('XC' + preset.id + ': ' + preset.title, preset.id)))
 form.xc.value = PRESETS.some((preset) => preset.id === xc) ? xc : PRESETS[0].id
@@ -34,6 +35,7 @@ form.build.value = build
 form.fmax.value = fmax ? String(fmax) : ''
 form.regions.checked = withRegions
 zoom.disabled = true
+play.disabled = true
 
 function say(text, isError) {
   status.textContent = text
@@ -241,10 +243,14 @@ async function main() {
   ws.on('error', (error) => say('wavesurfer.js could not play XC' + xc + ': ' + ((error && error.message) || error), true))
   ws.on('ready', () => {
     zoom.disabled = false
+    play.disabled = false
     say('XC' + xc + ': ' + shown.length + ' annotations, ' + boxed + ' of them bounded in frequency. wavesurfer.js '
       + version + ', the plugin\'s ' + (build === 'dist' ? 'dist build' : 'source') + '.')
   })
   zoom.addEventListener('input', () => ws.zoom(Number(zoom.value)))
+  play.addEventListener('click', () => ws.playPause())
+  ws.on('play', () => { play.textContent = 'Pause' })
+  ws.on('pause', () => { play.textContent = 'Play' })
   say('Downloading and decoding XC' + xc + ' at ' + (recording.sample_rate || 'its own') + ' Hz…')
   const loading = ws.load(safeHref(recording.filename))
   if (loading && loading.catch) loading.catch(() => {})
