@@ -38,19 +38,18 @@ It shows annotations; it does not yet make or edit them.
 
 ## Installation
 
-```sh
-npm install wavesurfer-annotations
-```
-
-Or with a script tag, after wavesurfer.js's own and its plugins':
+With a script tag, after wavesurfer.js's own and its plugins', all from the
+audioBLAST! CDN:
 
 ```html
-<script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
-<script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
-<script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/spectrogram.min.js"></script>
-<script src="https://unpkg.com/wavesurfer-annotations/dist/annotations.min.js"></script>
+<script src="https://cdn.audioblast.org/wavesurfer/8.0.2/wavesurfer.min.js"></script>
+<script src="https://cdn.audioblast.org/wavesurfer/8.0.2/plugins/regions.min.js"></script>
+<script src="https://cdn.audioblast.org/wavesurfer/8.0.2/plugins/spectrogram.min.js"></script>
+<script src="https://cdn.audioblast.org/wavesurfer-annotations/0.1.0/annotations.min.js"></script>
 <!-- WaveSurfer.Annotations is now defined -->
 ```
+
+It is not on npm yet.
 
 The plugin extends wavesurfer.js's own `BasePlugin`, so it carries no copy of
 wavesurfer.js: the ES module imports `wavesurfer.js`, and the script-tag build
