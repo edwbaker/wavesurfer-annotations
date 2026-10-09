@@ -4,6 +4,9 @@ A [wavesurfer.js](https://wavesurfer.xyz) plugin that shows the annotations of
 a recording. Each annotation's span of time is a region on the waveform; one
 bounded in frequency as well is also a box on the spectrogram.
 
+See it in the [live demo](https://edwbaker.github.io/wavesurfer-annotations/demo/),
+on xeno-canto recordings and their annotations from the audioBLAST! API.
+
 wavesurfer.js's Regions plugin marks spans of time only. Annotations of animal
 sounds, such as those made in Raven or on xeno-canto, usually bound a call in
 frequency too, and are best shown as a box on the spectrogram. This plugin

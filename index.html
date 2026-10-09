@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wavesurfer-annotations</title>
+<meta name="description" content="A wavesurfer.js plugin that shows the annotations of a recording: boxes bounded in time and frequency on the spectrogram, linked to regions on the waveform">
+<!-- The site's landing page, at its root and at the repository's, so that its
+     links work both on GitHub Pages and under npm run serve -->
+<style>
+  :root { color-scheme: light; font: 15px/1.6 system-ui, sans-serif; color: #1d2026; background: #fafafa; }
+  body { margin: 0 auto; padding: 24px 16px 32px; max-width: 760px; }
+  h1 { font-size: 24px; margin: 0 0 8px; }
+  h2 { font-size: 17px; margin: 28px 0 8px; }
+  p { margin: 0 0 12px; }
+  .note, footer { color: #4a4f59; }
+  .demo { display: inline-block; margin-top: 4px; padding: 8px 16px; border-radius: 4px; background: #1d2026; color: #fff; text-decoration: none; }
+  .demo:hover { background: #4a4f59; }
+  pre { margin: 0 0 12px; padding: 10px 12px; overflow-x: auto; background: #fff; border: 1px solid #dde1e6; font-size: 13px; line-height: 1.5; }
+  code { font-family: ui-monospace, Consolas, monospace; }
+  footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #e6e8eb; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>wavesurfer-annotations</h1>
+<p>A <a href="https://wavesurfer.xyz">wavesurfer.js</a> plugin that shows the annotations of a recording.
+  Each annotation's span of time is a region on the waveform; one bounded in frequency as well is also a box
+  on the spectrogram.</p>
+<p>Annotations of animal sounds, such as those made in Raven or on xeno-canto, usually bound a call in frequency
+  as well as in time. The plugin draws them as boxes on wavesurfer.js's Spectrogram plugin, linked to regions on the
+  waveform, and takes them as they are, in Audiovisual Core terms or plain ones.</p>
+
+<p><a class="demo" href="demo/">See the demo</a></p>
+<p class="note">xeno-canto recordings and their annotations, from the
+  <a href="https://api.audioblast.org/">audioBLAST! API</a>, in wavesurfer.js 7 or 8.</p>
+
+<h2>Use it</h2>
+<p>With a script tag, after wavesurfer.js's own and its plugins':</p>
+<pre><code>&lt;script src="https://cdn.audioblast.org/wavesurfer/8.0.2/wavesurfer.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.audioblast.org/wavesurfer/8.0.2/plugins/regions.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.audioblast.org/wavesurfer/8.0.2/plugins/spectrogram.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.audioblast.org/wavesurfer-annotations/0.1.0/annotations.min.js"&gt;&lt;/script&gt;</code></pre>
+<pre><code>const regions = WaveSurfer.Regions.create()
+const spectrogram = WaveSurfer.Spectrogram.create({ scale: 'linear', height: 200 })
+const annotations = WaveSurfer.Annotations.create({ regions, spectrogram })
+
+WaveSurfer.create({
+  container: '#player',
+  url: 'rec1.wav',
+  sampleRate: 48000, // the recording's own, so that the spectrogram reaches its top
+  plugins: [regions, spectrogram, annotations],
+})
+
+annotations.addAll([
+  { id: 'a1', start: 1.2, end: 1.9, low: 2400, high: 7800, label: 'Song' },
+  { id: 'a2', start: 3.0, end: 3.4, low: 9000, label: 'Call, from 9 kHz up' },
+  { id: 'a3', start: 5.1, end: 6.0, label: 'Noise, all frequencies' },
+])</code></pre>
+<p>It works with wavesurfer.js 7.10 and 8. Its options, events and styling are in the
+  <a href="https://github.com/edwbaker/wavesurfer-annotations#readme">README</a>.</p>
+
+<footer>Source and issues on <a href="https://github.com/edwbaker/wavesurfer-annotations">GitHub</a>.
+  MIT licence.</footer>
+</body>
+</html>
