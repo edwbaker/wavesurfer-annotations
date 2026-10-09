@@ -1,6 +1,6 @@
 {
   "name": "wavesurfer-annotations",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A wavesurfer.js plugin that shows annotations of a recording: boxes bounded in time and frequency on the spectrogram, linked to regions on the waveform",
   "type": "module",
   "license": "MIT",

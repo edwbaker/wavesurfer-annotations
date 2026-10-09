@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 (2026-10-09)
+
+- The README gives `npm install` again: 0.1.0's, which npm shows, said the
+  plugin was not on npm yet. The plugin itself is as in 0.1.0.
+
 ## 0.1.0 (2026-10-09)
 
 - First version: the Annotations plugin for wavesurfer.js 7.10 and 8, which
