@@ -186,7 +186,8 @@ async function showCredits(recording, rows) {
 
 async function main() {
   say('Loading wavesurfer.js ' + version + '…')
-  const base = 'https://unpkg.com/wavesurfer.js@' + version + '/dist/'
+  // From the audioBLAST! CDN, which has to have each version the form offers
+  const base = 'https://cdn.audioblast.org/wavesurfer/' + version + '/'
   await loadScript(base + 'wavesurfer.min.js')
   await Promise.all(['regions', 'spectrogram', 'timeline'].map((name) => loadScript(base + 'plugins/' + name + '.min.js')))
   let Annotations
