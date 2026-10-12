@@ -197,3 +197,18 @@ export function boxLayout(annotation, view, duration, minSize) {
   }
   return box
 }
+
+/**
+ * Whether two placements from boxLayout() put a box in the same place, in the
+ * same look, so that a box already drawn as the first need not be drawn again.
+ *
+ * @param {{left: number, width: number, top: number, height: number,
+ *   position: string, edges: {top: string, bottom: string}}} a
+ * @param {{left: number, width: number, top: number, height: number,
+ *   position: string, edges: {top: string, bottom: string}}} b
+ * @returns {boolean}
+ */
+export function samePlace(a, b) {
+  return a.left === b.left && a.width === b.width && a.top === b.top && a.height === b.height
+    && a.position === b.position && a.edges.top === b.edges.top && a.edges.bottom === b.edges.bottom
+}

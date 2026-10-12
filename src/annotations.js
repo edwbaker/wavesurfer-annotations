@@ -17,7 +17,7 @@
 import WaveSurfer from 'wavesurfer.js'
 import { withAlpha } from './color.js'
 import { describe } from './format.js'
-import { boxLayout, isBoxed, labelRooms, normaliseAnnotation, toNumber } from './geometry.js'
+import { boxLayout, isBoxed, labelRooms, normaliseAnnotation, samePlace, toNumber } from './geometry.js'
 
 const BasePlugin = WaveSurfer && WaveSurfer.BasePlugin
 if (!BasePlugin) throw new Error('wavesurfer-annotations needs wavesurfer.js 7.10.1 or later, loaded before it')
@@ -94,6 +94,8 @@ class AnnotationsPlugin extends BasePlugin {
     super(Object.assign({}, DEFAULTS, options))
     this.annotations = new Map()
     this.boxes = new Map()
+    // Where each box was last placed (see placeBox)
+    this.placed = new WeakMap()
     this.regions = new Map()
     this.spectrograms = []
     this.spectrogramSubscriptions = []
@@ -486,6 +488,12 @@ class AnnotationsPlugin extends BasePlugin {
   }
 
   placeBox(box, annotation, place) {
+    // Boxes are placed as shares of the recording and of the spectrogram on
+    // screen, so most layouts (a zoom, a resize, a redraw) leave every box
+    // where it was: then its styles and tooltip need no rewriting
+    const last = this.placed.get(box)
+    if (last && samePlace(last, place)) return
+    this.placed.set(box, place)
     const offView = place.position !== 'inside'
     Object.assign(box.style, {
       left: place.left + '%',

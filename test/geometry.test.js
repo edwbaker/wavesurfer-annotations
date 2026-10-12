@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { boxLayout, frequencyToY, isBoxed, labelRooms, normaliseAnnotation, timeLayout, toNumber } from '../src/geometry.js'
+import { boxLayout, frequencyToY, isBoxed, labelRooms, normaliseAnnotation, samePlace, timeLayout, toNumber } from '../src/geometry.js'
 
 test('numbers come from numbers or numeric text, and nothing else', () => {
   assert.equal(toNumber('2734.03'), 2734.03)
@@ -131,4 +131,22 @@ test('nothing is placed without a view or a duration', () => {
   assert.equal(boxLayout(annotation, { min: 0, max: 10000, height: 0 }, 10), null)
   assert.equal(boxLayout(annotation, view, 0), null)
   assert.equal(boxLayout(annotation, null, 10), null)
+})
+
+test('a box is in the same place when nothing about its placement differs', () => {
+  const annotation = { start: 1, end: 2, low: 2000, high: 4000 }
+  const placed = boxLayout(annotation, view, 10)
+  // Laid out again, as on a zoom: a new object, the same place
+  assert.equal(samePlace(placed, boxLayout(annotation, view, 10)), true)
+
+  // Anything that moves or restyles the box makes it a different place
+  assert.equal(samePlace(placed, boxLayout({ ...annotation, start: 1.5 }, view, 10)), false)
+  assert.equal(samePlace(placed, boxLayout({ ...annotation, end: 3 }, view, 10)), false)
+  assert.equal(samePlace(placed, boxLayout({ ...annotation, low: 1000 }, view, 10)), false)
+  assert.equal(samePlace(placed, boxLayout(annotation, { ...view, height: view.height * 2 }, 10)), false)
+  // Same size and position but another edge style: bound against clipped
+  assert.equal(samePlace(placed, boxLayout({ ...annotation, high: view.max + 1 }, { ...view }, 10)), false)
+  // Same spot, but wholly above what is shown rather than inside it
+  const strip = boxLayout({ start: 1, end: 2, low: view.max + 1000, high: view.max + 2000 }, view, 10)
+  assert.equal(samePlace(strip, { ...strip, position: 'inside' }), false)
 })
