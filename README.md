@@ -49,7 +49,7 @@ audioBLAST! CDN:
 <script src="https://cdn.audioblast.org/wavesurfer/8.0.2/wavesurfer.min.js"></script>
 <script src="https://cdn.audioblast.org/wavesurfer/8.0.2/plugins/regions.min.js"></script>
 <script src="https://cdn.audioblast.org/wavesurfer/8.0.2/plugins/spectrogram.min.js"></script>
-<script src="https://cdn.audioblast.org/wavesurfer-annotations/0.1.0/annotations.min.js"></script>
+<script src="https://cdn.audioblast.org/wavesurfer-annotations/0.2.0/annotations.min.js"></script>
 <!-- WaveSurfer.Annotations is now defined -->
 ```
 

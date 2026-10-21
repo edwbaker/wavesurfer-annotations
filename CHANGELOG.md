@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2026-10-21)
 
 - The `row` option draws an instance's regions on one row of a waveform split by
   channel, and its boxes on that row of split tiles. Without it, a region spans
