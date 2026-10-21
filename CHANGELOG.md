@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 (2026-10-21)
 
 - The `fillOpacity` option sets how deep a box's fill is at rest, from 0 to 1.
   The default, 0.12, is as before. Under the mouse a box's fill is 0.3, or its
