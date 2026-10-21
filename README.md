@@ -124,6 +124,22 @@ tiles.handOver(spectrogram)
 
 With tiles alone, as when the audio is streamed, give just the tiles.
 
+### Split channels
+
+A recording of several channels can be split into a row for each channel, in
+its tiles and in its waveform. Give an instance for each row, each with its
+`row` and the regions, so that every annotation has a region on each channel's
+waveform and a box on each channel's spectrogram:
+
+```js
+const first = Annotations.create({ regions, spectrogram: tiles, row: 0 })
+const second = Annotations.create({ regions, spectrogram: tiles, row: 1 })
+```
+
+Each instance then draws its own row, and a row not shown is left blank. An
+annotation that names a `channel` is drawn only on that channel's row; one that
+names none is drawn on every row.
+
 ### A frequency axis that agrees with the boxes
 
 ```js
@@ -140,6 +156,7 @@ annotations.on('view', (view) => {
 | Option | Default | |
 |---|---|---|
 | `regions` | | A Regions plugin, to show each annotation's span of time on the waveform. |
+| `row` | `-1` | Where a recording is split by channel, the row (from 0) this instance is for: its boxes are drawn on that row of the tiles, and its regions on that row of the waveform. `-1` is the whole of each. |
 | `spectrogram` | | The spectrogram to draw boxes on: a Spectrogram plugin, a TiledSpectrogram, or both in a list. |
 | `frequencyView` | | Instead of `spectrogram`, a function giving `{min, max, scale, element}`, or `{min, max, scale, top, height}`, for any other spectrogram. |
 | `color` | `'rgb(255, 140, 0)'` | Colour of an annotation without one. Hex and `rgb()` colours are used for fills too. |
@@ -157,6 +174,7 @@ annotations.on('view', (view) => {
 | `high` or `ac:freqHigh` | Hz; may be missing. |
 | `id` or `dcterms:identifier` | Adding an annotation with the id of one shown replaces it. |
 | `label` or `dwc:scientificName` | Shown on the box, or on the region of an annotation without one. |
+| `channel` | The channel (from 0, as the tiles count them) it is on, where a recording is split by channel. Missing, it is on every channel. |
 | `color` | Its colour. |
 
 Numbers may be given as text, as many APIs give them. Bounds the wrong way
@@ -199,7 +217,8 @@ those with `!important`.
 
 - Display only: annotations cannot yet be drawn or edited with the mouse.
 - Linear frequency scales only.
-- One spectrogram: not one per channel (`splitChannels`).
+- One instance draws on one spectrogram row: where a recording is split by
+  channel, there is an instance for each row (see Split channels).
 
 ## Browser support
 

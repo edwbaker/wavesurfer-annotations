@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- The `row` option draws an instance's regions on one row of a waveform split by
+  channel, and its boxes on that row of split tiles. Without it, a region spans
+  the whole waveform, as before.
+- An annotation may name its `channel` (from 0, as the tiles count them): it is
+  then drawn only on that channel's row, or where that channel is the one shown.
+  Without a channel it is drawn on every row, as before.
+- The Spectrogram plugin's element is found by its place among the waveform's
+  children, not by a canvas, which wavesurfer.js 8 may not have drawn yet when it
+  says it is ready. That gap caused the "element could not be found" warning in
+  windowed rendering, and the boxes went missing until the next layout.
+
 ## 0.1.1 (2026-10-09)
 
 - The README gives `npm install` again: 0.1.0's, which npm shows, said the

@@ -50,12 +50,15 @@ function text(value) {
  * (`ac:startTime`, `ac:endTime`, `ac:freqLow`, `ac:freqHigh`). Either
  * frequency bound may be missing, as Audiovisual Core allows; both missing
  * means the annotation is bounded in time alone. Bounds given the wrong way
- * round are swapped, and one without an end is a moment.
+ * round are swapped, and one without an end is a moment. A `channel`, counted
+ * from 0 as the tiles count them, puts it on that channel alone; without one, it
+ * is on every channel.
  *
  * @param {object} input
  * @param {string} fallbackId the id to give it if it has none of its own
  * @returns {{id: string, start: number, end: number, low: number|null,
- *   high: number|null, label: string, color: string|null, data: object}|null}
+ *   high: number|null, channel: number|null, label: string, color: string|null,
+ *   data: object}|null}
  *   null where it has no start
  */
 export function normaliseAnnotation(input, fallbackId) {
@@ -83,6 +86,7 @@ export function normaliseAnnotation(input, fallbackId) {
     end: end,
     low: low,
     high: high,
+    channel: toNumber(input.channel),
     label: text(input.label !== undefined ? input.label : input['dwc:scientificName']),
     color: input.color ? String(input.color) : null,
     data: input,
@@ -211,4 +215,54 @@ export function boxLayout(annotation, view, duration, minSize) {
 export function samePlace(a, b) {
   return a.left === b.left && a.width === b.width && a.top === b.top && a.height === b.height
     && a.position === b.position && a.edges.top === b.edges.top && a.edges.bottom === b.edges.bottom
+}
+
+/**
+ * Which child of wavesurfer.js's wrapper is the Spectrogram plugin's element,
+ * from what each child is: whether it has a part name, whether it is laid over
+ * the rest, and whether it holds a canvas. The element has no part name and is
+ * not laid over the rest. Where more than one child has neither, it is the one
+ * holding a canvas. It may hold none yet, as it does when it first says it is
+ * ready, so the one candidate is the element whether or not it has drawn.
+ *
+ * @param {{part: boolean, absolute: boolean, canvas: boolean}[]} children
+ * @returns {number} the index of the element, or -1 where none is singled out
+ */
+export function spectrogramChild(children) {
+  const candidates = []
+  children.forEach((child, index) => {
+    if (!child.part && !child.absolute) candidates.push(index)
+  })
+  if (candidates.length === 1) return candidates[0]
+  const drawn = candidates.filter((index) => children[index].canvas)
+  return drawn.length === 1 ? drawn[0] : -1
+}
+
+/**
+ * The row of a waveform split by channel that a region of the given index is
+ * on: the rows some height, counted from 0. A channel hidden by splitChannels
+ * has no height, and takes no row.
+ *
+ * @param {{top: number, height: number}[]} rows every channel's row, shown or not
+ * @param {number} index the row to find, among those shown
+ * @returns {{top: number, height: number}|null} null where there is no such row
+ */
+export function shownRow(rows, index) {
+  const shown = rows.filter((row) => row.height > 0)
+  if (!(index >= 0 && index < shown.length)) return null
+  return { top: shown[index].top, height: shown[index].height }
+}
+
+/**
+ * Whether an annotation is shown where the given channels are: on every one
+ * when it names no channel, and where none are known; otherwise where its own
+ * channel is one of them.
+ *
+ * @param {number|null} channel the annotation's channel, or null for none
+ * @param {number[]|null} channels the channels shown, or null where not known
+ * @returns {boolean}
+ */
+export function onChannels(channel, channels) {
+  if (channel === null || channel === undefined || !channels) return true
+  return channels.indexOf(channel) >= 0
 }

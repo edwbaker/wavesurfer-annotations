@@ -17,7 +17,7 @@
 import WaveSurfer from 'wavesurfer.js'
 import { withAlpha } from './color.js'
 import { describe } from './format.js'
-import { boxLayout, isBoxed, labelRooms, normaliseAnnotation, samePlace, toNumber } from './geometry.js'
+import { boxLayout, isBoxed, labelRooms, normaliseAnnotation, onChannels, samePlace, shownRow, spectrogramChild, toNumber } from './geometry.js'
 
 const BasePlugin = WaveSurfer && WaveSurfer.BasePlugin
 if (!BasePlugin) throw new Error('wavesurfer-annotations needs wavesurfer.js 7.10.1 or later, loaded before it')
@@ -25,6 +25,12 @@ if (!BasePlugin) throw new Error('wavesurfer-annotations needs wavesurfer.js 7.1
 const DEFAULTS = {
   /** A Regions plugin, to show each annotation's span of time on the waveform */
   regions: null,
+  /**
+   * The row (from 0) of a recording split by channel that this is for: of its
+   * tiles, which it draws boxes on, and of its waveform, which it draws regions
+   * on. -1, the default, is the whole of each.
+   */
+  row: -1,
   /** The spectrogram the boxes are drawn on: see setSpectrogram() */
   spectrogram: null,
   /** Colour of an annotation that has none of its own */
@@ -54,16 +60,19 @@ const LABEL_LOOK = '[part~="annotation-label"]{top:0;padding:0 3px;font-size:10p
 /**
  * The Spectrogram plugin's element in wavesurfer.js's wrapper, which the
  * plugin does not name. In wavesurfer.js 7 it is the plugin's `wrapper`; in 8
- * it is the one element in the wrapper that holds a canvas, has no part name
- * and is not laid over the rest.
+ * it is found by its place among the wrapper's children (see spectrogramChild).
  */
 function findSpectrogramElement(spectrogram, wrapper) {
   if (spectrogram.wrapper instanceof HTMLElement && spectrogram.wrapper.parentElement === wrapper) {
     return spectrogram.wrapper
   }
-  const found = Array.prototype.filter.call(wrapper.children, (child) =>
-    !child.hasAttribute('part') && child.querySelector('canvas') && getComputedStyle(child).position !== 'absolute')
-  return found.length === 1 ? found[0] : null
+  const children = Array.from(wrapper.children)
+  const index = spectrogramChild(children.map((child) => ({
+    part: child.hasAttribute('part'),
+    absolute: getComputedStyle(child).position === 'absolute',
+    canvas: child.querySelector('canvas') !== null,
+  })))
+  return index >= 0 ? children[index] : null
 }
 
 // A view as the page is given it, without the plugin's own workings
@@ -76,6 +85,9 @@ class AnnotationsPlugin extends BasePlugin {
    * @param {object} [options]
    * @param {object} [options.regions] a Regions plugin, to show each
    *   annotation's span of time on the waveform
+   * @param {number} [options.row] the row (from 0) of a recording split by
+   *   channel that this is for, of its tiles and of its waveform; -1, the
+   *   default, for the whole of each
    * @param {object|object[]} [options.spectrogram] the spectrogram the boxes
    *   are drawn on (see setSpectrogram())
    * @param {Function} [options.frequencyView] instead of `spectrogram`, a
@@ -282,8 +294,16 @@ class AnnotationsPlugin extends BasePlugin {
       const manifest = typeof plugin.getManifest === 'function' ? plugin.getManifest() : null
       const element = wrapper.querySelector('[part~="tiled-spectrogram"]')
       if (!range || !element) return null
-      return this.measure({ kind: 'tiles', element: element, min: range.min, max: range.max,
-        scale: (manifest && manifest.frequencyScale) || 'linear' })
+      const scale = (manifest && manifest.frequencyScale) || 'linear'
+      if (!(this.options.row >= 0)) {
+        return this.measure({ kind: 'tiles', element: element, min: range.min, max: range.max, scale: scale })
+      }
+      // One row of tiles split by channel: a share of the element, as each row is
+      const rows = typeof plugin.getShownViews === 'function' ? plugin.getShownViews().length : 1
+      if (!(this.options.row < rows)) return null
+      const height = element.offsetHeight / rows
+      return this.measure({ kind: 'tiles', min: range.min, max: range.max, scale: scale,
+        top: element.offsetTop + this.options.row * height, height: height })
     }
     // wavesurfer.js's Spectrogram plugin, which shows the decoded audio from
     // frequencyMin to frequencyMax, by default 0 Hz to half its sample rate,
@@ -292,7 +312,7 @@ class AnnotationsPlugin extends BasePlugin {
     if (!decoded) return null
     const element = findSpectrogramElement(plugin, wrapper)
     if (!element) {
-      // Before it has drawn, wavesurfer.js 8's has no canvas to be known by
+      // Only once it has said it is ready: before, it may not be in the wrapper yet
       if (this.drawn.has(plugin)) {
         this.warnOnce('element', 'The Spectrogram plugin\'s element could not be found; give the frequencyView option')
       }
@@ -326,8 +346,9 @@ class AnnotationsPlugin extends BasePlugin {
     const duration = ws.getDuration()
     // Nothing can be placed in time until wavesurfer.js knows the duration
     if (!(duration > 0)) return
+    const channels = this.rowChannels()
     this.annotations.forEach((annotation) => this.linkRegion(annotation))
-    this.confineRegions()
+    this.confineRegions(channels)
 
     if (!view || !(view.max > view.min) || !(view.height > 0)) {
       this.layer.style.display = 'none'
@@ -342,9 +363,16 @@ class AnnotationsPlugin extends BasePlugin {
     Object.assign(this.layer.style, { display: '', top: view.top + 'px', height: view.height + 'px' })
     const labels = []
     this.annotations.forEach((annotation) => {
+      // An annotation on another channel is not shown in this row
+      if (!onChannels(annotation.channel, channels)) {
+        const hidden = this.boxes.get(annotation.id)
+        if (hidden) hidden.style.display = 'none'
+        return
+      }
       const place = boxLayout(annotation, { min: view.min, max: view.max, height: view.height }, duration, this.options.minSize)
       if (!place) return
       const box = this.boxFor(annotation)
+      box.style.display = ''
       this.placeBox(box, annotation, place)
       const label = box.firstChild
       // A strip beyond the frequencies shown gives its label only in its tooltip
@@ -380,6 +408,11 @@ class AnnotationsPlugin extends BasePlugin {
     return annotation.color || this.options.color
   }
 
+  /** The id of an annotation's region: each row has its own, where there are rows */
+  regionId(annotation) {
+    return this.options.row >= 0 ? annotation.id + '-row' + this.options.row : annotation.id
+  }
+
   /** An annotation's region on the waveform, made once the duration is known */
   linkRegion(annotation) {
     const plugin = this.options.regions
@@ -388,7 +421,7 @@ class AnnotationsPlugin extends BasePlugin {
     let region = null
     try {
       region = plugin.addRegion({
-        id: annotation.id,
+        id: this.regionId(annotation),
         start: annotation.start,
         end: annotation.end,
         color: color,
@@ -404,18 +437,58 @@ class AnnotationsPlugin extends BasePlugin {
   }
 
   /**
-   * Keeps the regions of boxed annotations to the waveform, so that they do
-   * not cover their own boxes, as regions span all of wavesurfer.js's wrapper.
-   * Regions bounded in time alone stay full height: all frequencies.
+   * The place in the wrapper of this instance's row of the waveform, where it
+   * is split by channel: a row for each channel shown, and none for one hidden
+   * by splitChannels. Null where there is no such row (yet).
    */
-  confineRegions() {
-    const wrapper = this.wavesurfer.getWrapper()
-    const canvases = wrapper.querySelector('[part~="canvases"]')
+  rowPlace() {
+    const canvases = this.wavesurfer.getWrapper().querySelector('[part~="canvases"]')
+    if (!canvases) return null
+    const rows = Array.from(canvases.children).map((child) => ({ top: child.offsetTop, height: child.offsetHeight }))
+    return shownRow(rows, this.options.row)
+  }
+
+  /**
+   * The channels the rows this instance is for are showing, from the tiles'
+   * views: one row's, or every row's where it is for no one row. Null where they
+   * are not known, when every annotation is shown.
+   */
+  rowChannels() {
+    const tiles = this.spectrograms.filter((plugin) => typeof plugin.getShownViews === 'function')[0]
+    if (!tiles) return null
+    const views = tiles.getShownViews()
+    const shown = this.options.row >= 0 ? views.slice(this.options.row, this.options.row + 1) : views
+    const channels = []
+    shown.forEach((view) => (view.channels || []).forEach((channel) => {
+      if (channels.indexOf(channel) < 0) channels.push(channel)
+    }))
+    return channels.length ? channels : null
+  }
+
+  /**
+   * Places the regions, which span all of wavesurfer.js's wrapper unless kept to
+   * a part of it. A row's regions are kept to that row, and hidden while it is
+   * not shown. A boxed annotation's region is kept to the waveform, so that it
+   * does not cover its own boxes; regions bounded in time alone stay full height:
+   * all frequencies. An annotation on another channel has its region hidden.
+   *
+   * @param {number[]|null} channels the channels this instance shows (see rowChannels())
+   */
+  confineRegions(channels) {
+    const row = this.options.row >= 0
+    const place = row ? this.rowPlace() : null
+    const canvases = this.wavesurfer.getWrapper().querySelector('[part~="canvases"]')
     const height = canvases ? canvases.offsetHeight : 0
-    if (!(height > 0)) return
     this.regions.forEach((region, id) => {
+      if (!region.element) return
       const annotation = this.annotations.get(id)
-      if (annotation && isBoxed(annotation) && region.element) region.element.style.height = height + 'px'
+      const shown = (!row || place !== null) && (!annotation || onChannels(annotation.channel, channels))
+      region.element.style.display = shown ? '' : 'none'
+      if (row) {
+        if (place) Object.assign(region.element.style, { top: place.top + 'px', height: place.height + 'px' })
+      } else if (annotation && isBoxed(annotation) && height > 0) {
+        region.element.style.height = height + 'px'
+      }
     })
   }
 
