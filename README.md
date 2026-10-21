@@ -160,6 +160,7 @@ annotations.on('view', (view) => {
 | `spectrogram` | | The spectrogram to draw boxes on: a Spectrogram plugin, a TiledSpectrogram, or both in a list. |
 | `frequencyView` | | Instead of `spectrogram`, a function giving `{min, max, scale, element}`, or `{min, max, scale, top, height}`, for any other spectrogram. |
 | `color` | `'rgb(255, 140, 0)'` | Colour of an annotation without one. Hex and `rgb()` colours are used for fills too. |
+| `fillOpacity` | `0.12` | How deep a box's fill is at rest, from 0 to 1. Under the mouse it is 0.3, or this if that is deeper. |
 | `labels` | `true` | Whether to show annotations' labels. A label may run on past a narrow box as far as the next box, where it is cut short, so labels never cover one another; with under 30 px of room it is left off. Every box gives its label in full in its tooltip. |
 | `minSize` | `3` | Pixels a box is at least, either way, so that points and moments show. |
 | `interactive` | `true` | Whether boxes answer to the mouse. |

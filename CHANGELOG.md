@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- The `fillOpacity` option sets how deep a box's fill is at rest, from 0 to 1.
+  The default, 0.12, is as before. Under the mouse a box's fill is 0.3, or its
+  fill at rest if that is deeper.
+
 ## 0.2.0 (2026-10-21)
 
 - The `row` option draws an instance's regions on one row of a waveform split by

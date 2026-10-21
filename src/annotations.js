@@ -35,6 +35,11 @@ const DEFAULTS = {
   spectrogram: null,
   /** Colour of an annotation that has none of its own */
   color: 'rgb(255, 140, 0)',
+  /**
+   * How deep a box's fill is at rest, from 0 to 1. Under the mouse it is 0.3,
+   * or this if that is deeper.
+   */
+  fillOpacity: 0.12,
   /** Whether to show annotations' labels */
   labels: true,
   /** Pixels a box is at least, either way */
@@ -42,6 +47,9 @@ const DEFAULTS = {
   /** Whether boxes answer to the mouse (hover and click) */
   interactive: true,
 }
+
+// A box's fill under the mouse, unless its fill at rest is deeper
+const HOVER_FILL_OPACITY = 0.3
 
 // Which of a spectrogram's edges is drawn how: its own bound solid, a bound
 // beyond what is shown dashed, and no bound at all not drawn
@@ -528,8 +536,9 @@ class AnnotationsPlugin extends BasePlugin {
     let box = this.boxes.get(annotation.id)
     if (box) return box
     const color = this.colorOf(annotation)
-    const fill = withAlpha(color, 0.12) || 'rgba(255, 140, 0, 0.12)'
-    const strong = withAlpha(color, 0.3) || fill
+    const { fillOpacity } = this.options
+    const fill = withAlpha(color, fillOpacity) || 'rgba(255, 140, 0, ' + fillOpacity + ')'
+    const strong = withAlpha(color, Math.max(fillOpacity, HOVER_FILL_OPACITY)) || fill
     box = document.createElement('div')
     box.setAttribute('part', 'annotation')
     box.dataset.id = annotation.id
